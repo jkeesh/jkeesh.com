@@ -35,10 +35,11 @@ body{
 }
 
 /* Stage: fixed 1500×600 internally so existing pixel hat coordinates still work.
-   On narrow viewports we scale the whole stage down to fit. */
+   JS scales it down on narrow viewports (see script below). */
 .stage-wrap {
   position: relative;
   width: 100%;
+  height: 600px;
   overflow: hidden;
 }
 .stage {
@@ -46,14 +47,6 @@ body{
   width: 1500px;
   height: 600px;
   transform-origin: top left;
-}
-@media (max-width: 1500px) {
-  .stage-wrap {
-    height: calc(100vw * 600 / 1500);
-  }
-  .stage {
-    transform: scale(calc(100vw / 1500));
-  }
 }
 
 #hats {
@@ -250,6 +243,22 @@ body{
 </style>
 
 <script type="text/javascript">
+
+/* Responsive scaling — resize the 1500×600 stage to fit the viewport.
+   Done in JS because `transform: scale(calc(100vw / 1500))` yields a length,
+   which is invalid for scale() and gets silently dropped. */
+function fitStage() {
+  var stage = document.querySelector('.stage');
+  var wrap  = document.querySelector('.stage-wrap');
+  if (!stage || !wrap) return;
+  var vw = document.documentElement.clientWidth;
+  var scale = Math.min(1, vw / 1500);
+  stage.style.transform = 'scale(' + scale + ')';
+  wrap.style.height = (600 * scale) + 'px';
+}
+window.addEventListener('resize', fitStage);
+window.addEventListener('orientationchange', fitStage);
+window.addEventListener('DOMContentLoaded', fitStage);
 
 /* Tap-to-reveal on touch devices (and a bonus click toggle on desktop).
    Tap a hat → it turns color; tap again or tap elsewhere → it goes back. */
