@@ -10,11 +10,68 @@ a{
   color:black;
 }
 
+body{
+  margin: 0;
+  padding: 0;
+}
+
+/* Nav row — floats top-right on wide screens; wraps gracefully on narrow */
+.nav {
+  float: right;
+  padding: 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.nav a, .nav span {
+  display: inline-block;
+  margin: 0 4px;
+  line-height: 1.8;
+}
+@media (max-width: 700px) {
+  .nav {
+    float: none;
+    text-align: center;
+  }
+}
+
+/* Stage: fixed 1500×600 internally so existing pixel hat coordinates still work.
+   On narrow viewports we scale the whole stage down to fit. */
+.stage-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.stage {
+  position: relative;
+  width: 1500px;
+  height: 600px;
+  transform-origin: top left;
+}
+@media (max-width: 1500px) {
+  .stage-wrap {
+    height: calc(100vw * 600 / 1500);
+  }
+  .stage {
+    transform: scale(calc(100vw / 1500));
+  }
+}
+
+#hats {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  width: 1500px;
+  height: auto;
+}
+
+/* --- hat hit-boxes (unchanged coordinates) --- */
+
 #fromage {
   position: absolute;
   background:transparent;
-  left: 412px; /* 425px; /* 283px; */
-  top: 276px; /* 288px; /*192px; */
+  left: 412px;
+  top: 276px;
   width: 176px;
   height: 306px;
 }
@@ -22,8 +79,8 @@ a{
 #panthers {
   position: absolute;
   background:transparent;
-  left: 621px; /*633px; /*422px; */
-  top: 317px; /* 329px; /* 219px; */
+  left: 621px;
+  top: 317px;
   width: 167px;
   height: 275px;
 }
@@ -167,57 +224,60 @@ a{
 }
 
 
-#disney:hover {background:url(disney15.png) no-repeat 0 0;}
-#panthers:hover {background:url(panthers15.png) no-repeat 0 0;}
-#fromage:hover {background:url(fromage15.png) no-repeat 0 0;}
-#italia:hover {background:url(italia15.png) no-repeat 0 0;}
-#bobchins:hover {background:url(bobchins15.png) no-repeat 0 0;}
-#plaid:hover {background:url(plaid15new.png) no-repeat 0 0;}
-#superbowl:hover {background:url(superbowl15.png) no-repeat 0 0;}
-#orange:hover {background:url(orange15.png) no-repeat 0 0;}
-#clown:hover {background:url(clown15.png) no-repeat 0 0;}
-#indiana:hover {background:url(indiana15new.png) no-repeat 0 0;}
-#bulldog:hover {background:url(bulldog15.png) no-repeat 0 0;}
-#mms:hover {background:url(mms15.png) no-repeat 0 0;}
-#black:hover {background:url(black15.png) no-repeat 0 0;}
-#yellowdot:hover {background:url(yellowdot15.png) no-repeat 0 0;}
-#flipside:hover {background:url(flipside15.png) no-repeat 0 0;}
-#swimming:hover {background:url(swimming15.png) no-repeat 0 0;}
+/* Reveal a colored hat when hovered OR when .active (tapped) */
+#disney:hover,    #disney.active    {background:url(disney15.png) no-repeat 0 0;}
+#panthers:hover,  #panthers.active  {background:url(panthers15.png) no-repeat 0 0;}
+#fromage:hover,   #fromage.active   {background:url(fromage15.png) no-repeat 0 0;}
+#italia:hover,    #italia.active    {background:url(italia15.png) no-repeat 0 0;}
+#bobchins:hover,  #bobchins.active  {background:url(bobchins15.png) no-repeat 0 0;}
+#plaid:hover,     #plaid.active     {background:url(plaid15new.png) no-repeat 0 0;}
+#superbowl:hover, #superbowl.active {background:url(superbowl15.png) no-repeat 0 0;}
+#orange:hover,    #orange.active    {background:url(orange15.png) no-repeat 0 0;}
+#clown:hover,     #clown.active     {background:url(clown15.png) no-repeat 0 0;}
+#indiana:hover,   #indiana.active   {background:url(indiana15new.png) no-repeat 0 0;}
+#bulldog:hover,   #bulldog.active   {background:url(bulldog15.png) no-repeat 0 0;}
+#mms:hover,       #mms.active       {background:url(mms15.png) no-repeat 0 0;}
+#black:hover,     #black.active     {background:url(black15.png) no-repeat 0 0;}
+#yellowdot:hover, #yellowdot.active {background:url(yellowdot15.png) no-repeat 0 0;}
+#flipside:hover,  #flipside.active  {background:url(flipside15.png) no-repeat 0 0;}
+#swimming:hover,  #swimming.active  {background:url(swimming15.png) no-repeat 0 0;}
 
-
-
-
-body{
-  overflow:hidden;
-}
 
 .hidden{
   display: none;
-}
-
-.visible{
-  visibility: visible;
-}
-
-#hats{
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  z-index: -1;
 }
 
 </style>
 
 <script type="text/javascript">
 
-function setVisible(id){
-  document.getElementById(id).className = "visible";
-}
-
-function setHidden(id){
-  document.getElementById(id).className = "hidden";
-
-}
+/* Tap-to-reveal on touch devices (and a bonus click toggle on desktop).
+   Tap a hat → it turns color; tap again or tap elsewhere → it goes back. */
+window.addEventListener('DOMContentLoaded', function () {
+  var ids = ['fromage','panthers','disney','italia','bobchins','plaid',
+             'superbowl','orange','clown','indiana','bulldog','mms','black',
+             'yellowdot','flipside','swimming'];
+  var active = null;
+  function deactivate() {
+    if (active) {
+      var el = document.getElementById(active);
+      if (el) el.classList.remove('active');
+      active = null;
+    }
+  }
+  ids.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (active === id) { deactivate(); return; }
+      deactivate();
+      el.classList.add('active');
+      active = id;
+    });
+  });
+  document.body.addEventListener('click', deactivate);
+});
 
 </script>
 
@@ -226,7 +286,7 @@ function setHidden(id){
 
 <body>
 
-<div style="float:right">
+<div class="nav">
 <span>jkeesh.com</span>
 <a href="http://codehs.com">CodeHS</a>
 <a href="http://readwritecodebook.com">Read Write Code Book</a>
@@ -244,25 +304,30 @@ function setHidden(id){
 </div>
 
 
-<img src="hats_bw.png" id="hats" width="1500" name="hats" />
-<div id="fromage"></div>
-<div id="panthers"></div>
-<div id="disney"></div>
-<div id="italia"></div>
-<div id="bobchins"></div>
-<div id="plaid"></div>
-<div id="superbowl"></div>
-<div id="orange"></div>
-<div id="clown"></div>
-<div id="indiana"></div>
-<div id="bulldog"></div>
-<div id="mms"></div>
-<div id="black"></div>
-<div id="yellowdot"></div>
-<div id="flipside"></div>
-<div id="swimming"></div>
+<div class="stage-wrap">
+  <div class="stage">
+    <img src="hats_bw.png" id="hats" width="1500" name="hats" />
+    <div id="fromage"></div>
+    <div id="panthers"></div>
+    <div id="disney"></div>
+    <div id="italia"></div>
+    <div id="bobchins"></div>
+    <div id="plaid"></div>
+    <div id="superbowl"></div>
+    <div id="orange"></div>
+    <div id="clown"></div>
+    <div id="indiana"></div>
+    <div id="bulldog"></div>
+    <div id="mms"></div>
+    <div id="black"></div>
+    <div id="yellowdot"></div>
+    <div id="flipside"></div>
+    <div id="swimming"></div>
+  </div>
+</div>
 
 
+<!-- preload colored images (kept hidden but fetched by the browser) -->
 <img src="fromage15.png" class="hidden" />
 <img src="panthers15.png" class="hidden" />
 <img src="disney15.png" class="hidden" />
